@@ -7,7 +7,7 @@ This is the backend service for the Gmail Extension MVP with Google OAuth integr
 - Google OAuth 2.0 authentication
 - Receives POST requests at `/api/send-email` with email prompts (requires authentication)
 - Parses natural language prompts to extract recipient, subject, body, and send time
-- Uses GitHub Actions every five minutes in production and node-cron locally to check for due emails
+- Uses GitHub Actions every minute in production and node-cron locally to check for due emails
 - Sends actual emails via Gmail API using user's OAuth tokens
 - In-memory storage for scheduled emails and tokens (in a real app, use a database)
 
@@ -42,11 +42,12 @@ CRON_SECRET=generate-a-long-random-secret
 For production, set `CRON_SECRET` in both Vercel's environment variables and
 the GitHub repository's Actions secrets. Add a repository variable named
 `BACKEND_URL` containing the deployed backend URL. The workflow in
-`.github/workflows/send-due-emails.yml` checks for due mail every five minutes.
-GitHub may delay scheduled workflow starts, so this is not precise-to-the-minute
-delivery. This avoids Vercel Cron's Hobby plan frequency limit. After deploying,
-sign in with Google again so the backend can store an offline refresh token in
-MongoDB.
+`.github/workflows/send-due-emails.yml` checks for due mail every minute.
+GitHub may still delay scheduled workflow starts, so delivery is not guaranteed
+precise-to-the-minute, but it is much closer to real-time than the previous
+five-minute cadence. This avoids Vercel Cron's Hobby plan frequency limit.
+After deploying, sign in with Google again so the backend can store an offline
+refresh token in MongoDB.
 
 ### 3. Install Dependencies
 
