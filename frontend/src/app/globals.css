@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+:root {
+  /* Wispr Flow Design Tokens */
+  --bg: #ffffeb; /* pale lemon-cream canvas */
+  --text: #1a1a1a; /* warm near-black ink */
+  --brand: #f0d7ff; /* soft lavender */
+  --brand-hover: #e8c6ff;
+  --surface-dark: #034f46; /* deep forest green */
+  --accent-glow: #ffa946; /* warm orange */
+  --accent-wine: #7f1c34;
+  --stone: #e4e4d0; /* subtle secondary backgrounds */
+  --muted: #666666; /* captions, metadata */
+  --border: rgba(26, 26, 26, 0.3); /* 1px hairlines */
+
+  /* Typography */
+  --font-serif: 'EB Garamond', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Fluid typography with clamp() */
+  --font-size-display: clamp(2.5rem, 8vw, 4.5rem);
+  --font-size-h1: clamp(2rem, 6vw, 3.5rem);
+  --font-size-h2: clamp(1.75rem, 5vw, 3rem);
+  --font-size-h3: clamp(1.5rem, 4vw, 2.5rem);
+  --font-size-h4: clamp(1.25rem, 3vw, 2rem);
+  --font-size-base: 1rem; /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-xs: 0.75rem; /* 12px */
+
+  --line-height-tight: 1.0;
+  --line-height-snug: 1.1;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+
+  /* Spacing (4px grid) */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-9: 36px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* Radius */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm: rgba(26, 26, 15, 0.04);
+  --shadow-md: rgba(26, 26, 15, 0.08);
+  --shadow-lg: rgba(26, 26, 15, 0.12);
+  --shadow-none: none;
+
+  /* Transition */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow: 250ms ease-out;
+
+  /* Derived/semantic variables */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --primary: var(--brand);
+  --primary-hover: var(--brand-hover);
+  --surface: var(--stone);
+  --surface-inverted: var(--surface-dark);
+  --surface-inverted-foreground: var(--bg);
+  --muted-foreground: var(--muted);
+  --border-color: var(--border);
+
+  /* Semantic spacing */
+  --spacing-xs: var(--spacing-2);
+  --spacing-sm: var(--spacing-3);
+  --spacing-md: var(--spacing-4);
+  --spacing-lg: var(--spacing-6);
+  --spacing-xl: var(--spacing-8);
+
+  /* Semantic radius */
+  --radius-xs: var(--radius-sm);
+  --radius-sm: var(--radius-md);
+  --radius-md: var(--radius-lg);
+  --radius-lg: var(--radius-xl);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode adaptations maintaining Wispr Flow relationships */
+    --bg: #1a1a1a; /* dark canvas */
+    --text: #ffffeb; /* cream text on dark */
+    --brand: #034f46; /* soft lavender (still visible on dark) */
+    --brand-hover: #e8c6ff;
+    --surface-dark: #034f46; /* deep forest green */
+    --accent-glow: #ffa946; /* warm orange */
+    --accent-wine: #7f1c34;
+    --stone: #333333; /* darker stone for dark mode */
+    --muted: #cccccc; /* lighter muted for dark mode */
+    --border: rgba(255, 255, 255, 0.3); /* lighter border for dark mode */
+
+    /* Typography remains the same in dark mode */
+    --font-serif: 'EB Garamond', serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Fluid typography with clamp() */
+    --font-size-display: clamp(2.5rem, 8vw, 4.5rem);
+    --font-size-h1: clamp(2rem, 6vw, 3.5rem);
+    --font-size-h2: clamp(1.75rem, 5vw, 3rem);
+    --font-size-h3: clamp(1.5rem, 4vw, 2.5rem);
+    --font-size-h4: clamp(1.25rem, 3vw, 2rem);
+    --font-size-base: 1rem; /* 16px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-xs: 0.75rem; /* 12px */
+
+    --line-height-tight: 1.0;
+    --line-height-snug: 1.1;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+
+    --tracking-tight: -0.02em;
+    --tracking-normal: 0;
+    --tracking-wide: 0.02em;
+
+    /* Spacing (4px grid) */
+    --spacing-0: 0px;
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-5: 20px;
+    --spacing-6: 24px;
+    --spacing-7: 28px;
+    --spacing-8: 32px;
+    --spacing-9: 36px;
+    --spacing-10: 40px;
+    --spacing-12: 48px;
+    --spacing-16: 64px;
+    --spacing-20: 80px;
+    --spacing-24: 96px;
+
+    /* Radius */
+    --radius-none: 0px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-3xl: 24px;
+    --radius-full: 9999px;
+
+    /* Shadow */
+    --shadow-sm: rgba(255, 255, 255, 0.04);
+    --shadow-md: rgba(255, 255, 255, 0.08);
+    --shadow-lg: rgba(255, 255, 255, 0.12);
+    --shadow-none: none;
+
+    /* Transition */
+    --transition-fast: 150ms ease-out;
+    --transition-normal: 200ms ease-out;
+    --transition-slow: 250ms ease-out;
+
+    /* Derived/semantic variables */
+    --background: var(--bg);
+    --foreground: var(--text);
+    --primary: var(--brand);
+    --primary-hover: var(--brand-hover);
+    --surface: var(--stone);
+    --surface-inverted: var(--surface-dark);
+    --surface-inverted-foreground: var(--bg);
+    --muted-foreground: var(--muted);
+    --border-color: var(--border);
+
+    /* Semantic spacing */
+    --spacing-xs: var(--spacing-2);
+    --spacing-sm: var(--spacing-3);
+    --spacing-md: var(--spacing-4);
+    --spacing-lg: var(--spacing-6);
+    --spacing-xl: var(--spacing-8);
+
+    /* Semantic radius */
+    --radius-xs: var(--radius-sm);
+    --radius-sm: var(--radius-md);
+    --radius-md: var(--radius-lg);
+    --radius-lg: var(--radius-xl);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Typography enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  line-height: var(--line-height-tight);
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Utility classes for direct token usage */
+.text-display {
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-h1 {
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-h2 {
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-h3 {
+  font-size: var(--font-size-h3);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-h4 {
+  font-size: var(--font-size-h4);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Utility classes for spacing - using actual values for now */
+.pt-0 { padding-top: 0px; }
+.pb-0 { padding-bottom: 0px; }
+.pl-0 { padding-left: 0px; }
+.pr-0 { padding-right: 0px; }
+.px-0 { padding-left: 0px; padding-right: 0px; }
+.py-0 { padding-top: 0px; padding-bottom: 0px; }
+
+.mt-0 { margin-top: 0px; }
+.mb-0 { margin-bottom: 0px; }
+.ml-0 { margin-left: 0px; }
+.mr-0 { margin-right: 0px; }
+.mx-0 { margin-left: 0px; margin-right: 0px; }
+.my-0 { margin-top: 0px; margin-bottom: 0px; }
