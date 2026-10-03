@@ -1044,6 +1044,9 @@ app.get('/api/cron/send-due-emails', async (req, res) => {
 
   try {
     const result = await sendDueEmails();
+    if (result.failed > 0) {
+      return res.status(502).json({ status: 'partial_failure', ...result });
+    }
     return res.json({ status: 'ok', ...result });
   } catch (error) {
     console.error('Cron email delivery failed:', error);
