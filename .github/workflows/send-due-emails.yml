@@ -1,8 +1,8 @@
 name: Send Due Emails
 
 on:
-  schedule:
-    - cron: '3-59/5 * * * *'
+  repository_dispatch:
+    types: [send-due-emails]
   workflow_dispatch:
 
 jobs:
@@ -19,4 +19,4 @@ jobs:
           test -n "$CRON_SECRET"
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer ${CRON_SECRET}" \
-            "${BACKEND_URL%/}/api/cron/send-due-emails"
+            "${BACKEND_URL%/}/api/cron/send-due-emails"   
