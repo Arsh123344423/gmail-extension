@@ -405,7 +405,6 @@ app.use(express.json());
 // In-memory storage for scheduled emails and user tokens
 // In a real app, use a database
 const scheduledEmails = [];
-const userTokens = {}; // Store tokens by user ID
 
 // Passport serialization
 passport.serializeUser((user, done) => {
@@ -422,34 +421,47 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'your-google-client-secret',
   callbackURL: `${process.env.BASE_URL || 'http://localhost:3001'}/auth/google/callback`,
   scope: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send']
-}, (accessToken, refreshToken, profile, done) => {
-  // Store tokens and profile for this user
-  userTokens[profile.id] = {
-    accessToken,
-    refreshToken,
-    expiryDate: Date.now() + 3600 * 1000, // 1 hour expiry
-    profile: {
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    await mongoClientPromise;
+    const userTokensCollection = mongoClient.db().collection('userTokens');
+    const existingTokens = await userTokensCollection.findOne({ _id: profile.id });
+    const userProfile = {
       id: profile.id,
       email: profile.emails[0].value,
       name: `${profile.name.givenName} ${profile.name.familyName}`,
       picture: profile.photos[0].value
+    };
+    const storedTokens = {
+      _id: profile.id,
+      accessToken,
+      expiryDate: Date.now() + 3600 * 1000,
+      profile: userProfile
+    };
+
+    if (refreshToken || existingTokens?.refreshToken) {
+      storedTokens.refreshToken = refreshToken || existingTokens.refreshToken;
     }
-  };
 
-  // Create user object
-  const user = {
-    id: profile.id,
-    email: profile.emails[0].value,
-    name: `${profile.name.givenName} ${profile.name.familyName}`,
-    picture: profile.photos[0].value
-  };
+    await userTokensCollection.updateOne(
+      { _id: profile.id },
+      { $set: storedTokens },
+      { upsert: true }
+    );
 
-  return done(null, user);
+    return done(null, userProfile);
+  } catch (error) {
+    return done(error);
+  }
 }));
 
 // Auth routes
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'] })
+  passport.authenticate('google', {
+    scope: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'],
+    accessType: 'offline',
+    prompt: 'consent'
+  })
 );
 
 app.get('/auth/google/callback',
@@ -848,10 +860,15 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // Function to get Gmail instance for a user
-function getGmailInstance(userId) {
-  const tokens = userTokens[userId];
+async function getGmailInstance(userId) {
+  await mongoClientPromise;
+  const userTokensCollection = mongoClient.db().collection('userTokens');
+  const tokens = await userTokensCollection.findOne({ _id: userId });
   if (!tokens) {
-    throw new Error('No tokens found for user');
+    throw new Error('No stored OAuth tokens for user; sign in with Google again');
+  }
+  if (!tokens.refreshToken) {
+    throw new Error('No refresh token stored for user; sign in with Google again');
   }
 
   console.log(
@@ -873,10 +890,25 @@ function getGmailInstance(userId) {
 
   auth.setCredentials({
     access_token: tokens.accessToken,
-    refresh_token: tokens.refreshToken
+    refresh_token: tokens.refreshToken,
+    expiry_date: tokens.expiryDate
   });
 
-  return google.gmail({ version: 'v1', auth });
+  auth.on('tokens', refreshedTokens => {
+    const updates = {};
+    if (refreshedTokens.access_token) updates.accessToken = refreshedTokens.access_token;
+    if (refreshedTokens.expiry_date) updates.expiryDate = refreshedTokens.expiry_date;
+    if (refreshedTokens.refresh_token) updates.refreshToken = refreshedTokens.refresh_token;
+    if (Object.keys(updates).length > 0) {
+      userTokensCollection.updateOne({ _id: userId }, { $set: updates })
+        .catch(error => console.error('Failed to persist refreshed Gmail tokens:', error));
+    }
+  });
+
+  return {
+    gmail: google.gmail({ version: 'v1', auth }),
+    userProfile: tokens.profile
+  };
 }
 
 // Route to handle email scheduling
@@ -913,8 +945,7 @@ app.post('/api/send-email', ensureAuthenticated, async (req, res) => {
 // Function to send email using Gmail API
 async function sendEmailViaGmail(userId, emailDetails) {
   try {
-    const gmail = getGmailInstance(userId);
-    const userProfile = userTokens[userId]?.profile;
+    const { gmail, userProfile } = await getGmailInstance(userId);
 
     if (!userProfile) {
       throw new Error('User profile not found');
@@ -958,17 +989,20 @@ async function sendEmailViaGmail(userId, emailDetails) {
 
 // Function to send due emails (runs every minute)
 async function sendDueEmails() {
-  try {
-    if (!db || !scheduledEmailsCollection) {
-      console.log('MongoDB not connected, skipping due email check');
-      return;
-    }
+  await mongoClientPromise;
+  if (!scheduledEmailsCollection) {
+    db = mongoClient.db();
+    scheduledEmailsCollection = db.collection('scheduledEmails');
+  }
 
+  try {
     const now = new Date();
     const dueEmails = await scheduledEmailsCollection
       .find(getScheduledEmailQuery({ $lte: now }))
       .toArray();
     dueEmails.sort(compareScheduledEmails);
+    let sent = 0;
+    let failed = 0;
 
     for (const emailRecord of dueEmails) {
       try {
@@ -978,19 +1012,44 @@ async function sendDueEmails() {
         await sendEmailViaGmail(userId, emailDetails);
         // Remove the email record after sending
         await OrchestratorAgent.removeEmailRecord(emailRecord._id.toString());
+        sent += 1;
         console.log(`Sent email ${emailRecord._id} to ${emailDetails.to}`);
       } catch (error) {
+        failed += 1;
         console.error(`Error sending email ${emailRecord._id}:`, error);
         // We leave the email in the database so it will be retried next minute
       }
     }
+    return { due: dueEmails.length, sent, failed };
   } catch (error) {
     console.error('Error in sendDueEmails:', error);
+    throw error;
   }
 }
 
-// Schedule the due email checker to run every minute
-cron.schedule('* * * * *', sendDueEmails);
+if (process.env.VERCEL !== '1') {
+  cron.schedule('* * * * *', () => {
+    sendDueEmails().catch(error => console.error('Scheduled email check failed:', error));
+  });
+}
+
+app.get('/api/cron/send-due-emails', async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return res.status(500).json({ error: 'CRON_SECRET is not configured' });
+  }
+  if (req.get('authorization') !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const result = await sendDueEmails();
+    return res.json({ status: 'ok', ...result });
+  } catch (error) {
+    console.error('Cron email delivery failed:', error);
+    return res.status(500).json({ error: 'Failed to process due emails' });
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

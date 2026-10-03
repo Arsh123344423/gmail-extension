@@ -7,7 +7,7 @@ This is the backend service for the Gmail Extension MVP with Google OAuth integr
 - Google OAuth 2.0 authentication
 - Receives POST requests at `/api/send-email` with email prompts (requires authentication)
 - Parses natural language prompts to extract recipient, subject, body, and send time
-- Uses node-cron to schedule emails for delivery at the specified time
+- Uses Vercel Cron in production and node-cron locally to check for due emails
 - Sends actual emails via Gmail API using user's OAuth tokens
 - In-memory storage for scheduled emails and tokens (in a real app, use a database)
 
@@ -36,7 +36,13 @@ SESSION_SECRET=your-super-secret-session-key-change-in-production
 GOOGLE_CLIENT_ID=your-google-client-id-from-google-cloud
 GOOGLE_CLIENT_SECRET=your-google-client-secret-from-google-cloud
 BASE_URL=http://localhost:3001  # Change to your production URL when deploying
+CRON_SECRET=generate-a-long-random-secret
 ```
+
+For Vercel, set the backend project root directory to `backend`, configure
+`CRON_SECRET` in the Vercel environment variables, and ensure your Vercel plan
+supports the one-minute schedule in `vercel.json`. After deploying, sign in
+with Google again so the backend can store an offline refresh token in MongoDB.
 
 ### 3. Install Dependencies
 
@@ -146,8 +152,8 @@ When it's time to send a scheduled email:
 
 ## Limitations (MVP)
 
-1. **In-Memory Storage**: Tokens and scheduled emails stored in memory (lost on restart)
-2. **Simplified Token Expiry**: Basic expiry checking without automatic refresh
+1. **Token Storage**: OAuth tokens are stored in MongoDB and require appropriate database access controls
+2. **Scheduler Availability**: Production delivery depends on Vercel Cron invoking the backend once per minute
 3. **Basic Error Handling**: Limited error recovery for failed email sends
 4. **No Database**: No persistence of user data or email history
 5. **No Refresh Token Flow**: Doesn't implement automatic token refresh when expired
