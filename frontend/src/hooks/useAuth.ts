@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, '');
+
 type User = {
   name: string;
   email: string;
@@ -15,7 +17,7 @@ export const useAuth = (redirectIfAuthenticated: boolean = false, redirectIfNotA
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/health`, {
+        const res = await fetch(`${BACKEND_URL}/health`, {
           method: 'GET',
           credentials: 'include'
         });

@@ -16,7 +16,7 @@ const geminiModel = genAI
   : null;
 
 // MongoDB connection
-const mongoClient = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/gmail_extension');
+const mongoClient = new MongoClient(process.env.MONGODB_URI);
 let db;
 let scheduledEmailsCollection;
 
@@ -353,11 +353,18 @@ class OrchestratorAgent {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL
+  ? new URL(process.env.FRONTEND_URL).origin
+  : undefined;
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
 
 app.use((req, res, next) => {
   const origin = req.get('Origin');
-  if (origin === FRONTEND_URL) {
+  if (origin === FRONTEND_ORIGIN) {
     res.set('Access-Control-Allow-Origin', origin);
     res.set('Access-Control-Allow-Credentials', 'true');
     res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -376,7 +383,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: {
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+  }
 }));
 
 // Initialize Passport
@@ -437,9 +447,11 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: FRONTEND_URL }),
+  passport.authenticate('google', {
+    failureRedirect: FRONTEND_ORIGIN ? `${FRONTEND_ORIGIN}/login` : '/login'
+  }),
   (req, res) => {
-    res.redirect(FRONTEND_URL);
+    res.redirect(FRONTEND_ORIGIN || '/');
   }
 );
 
