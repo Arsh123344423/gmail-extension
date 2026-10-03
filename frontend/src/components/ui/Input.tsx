@@ -1,12 +1,14 @@
-import { ReactNode, Ref, RefObject } from 'react';
+import { Ref } from 'react';
 
 interface InputProps {
   type?: 'text' | 'textarea' | 'email' | 'password';
+  id?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  maxLength?: number;
   rows?: number;
   autoFocus?: boolean;
   ref?: Ref<HTMLInputElement | HTMLTextAreaElement>;
@@ -14,11 +16,13 @@ interface InputProps {
 
 export const Input = ({
   type = 'text',
+  id,
   value,
   onChange,
   placeholder = '',
   disabled = false,
   className = '',
+  maxLength,
   rows,
   autoFocus = false,
   ref
@@ -46,10 +50,12 @@ export const Input = ({
   if (type === 'textarea') {
     return (
       <textarea
+        id={id}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
+        maxLength={maxLength}
         className={classes.trim()}
         rows={rows}
         autoFocus={autoFocus}
@@ -60,11 +66,13 @@ export const Input = ({
 
   return (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
       disabled={disabled}
+      maxLength={maxLength}
       className={classes.trim()}
       autoFocus={autoFocus}
       ref={ref as Ref<HTMLInputElement> | undefined}
