@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const { google } = require('googleapis');
 const cron = require('node-cron');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -17,13 +18,14 @@ const geminiModel = genAI
 
 // MongoDB connection
 const mongoClient = new MongoClient(process.env.MONGODB_URI);
+const mongoClientPromise = mongoClient.connect();
 let db;
 let scheduledEmailsCollection;
 
 // Connect to MongoDB
 async function connectToMongoDB() {
   try {
-    await mongoClient.connect();
+    await mongoClientPromise;
     db = mongoClient.db();
     scheduledEmailsCollection = db.collection('scheduledEmails');
     console.log('Connected to MongoDB');
@@ -381,6 +383,10 @@ app.use((req, res, next) => {
 // Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  store: MongoStore.create({
+    clientPromise: mongoClientPromise,
+    collectionName: 'sessions'
+  }),
   resave: false,
   saveUninitialized: false,
   cookie: {
