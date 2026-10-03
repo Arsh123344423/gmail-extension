@@ -1,0 +1,21 @@
+name: Send Due Emails
+
+on:
+  schedule:
+    - cron: '2 * * * *'
+  workflow_dispatch:
+
+jobs:
+  send-due-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend email worker
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$BACKEND_URL"
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${BACKEND_URL%/}/api/cron/send-due-emails"
